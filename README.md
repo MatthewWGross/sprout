@@ -3,12 +3,12 @@
 This is a side project to knock the rust off of my C++
 
 #Technical Details:
----Simple batch build to compile rather than using VS
----C/C++ 
----Data-Driven loading of Map, entities, etc...
----Details of things stored in a Database (Mongo? SQL?... not sure yet)
----Proper Save/Load serialization
----OpenGL Renderer
+  * Simple batch build to compile rather than using VS
+  * C/C++ 
+  * Data-Driven loading of Map, entities, etc...
+  * Details of things stored in a Database (Mongo? SQL?... not sure yet)
+  * Proper Save/Load serialization
+  * OpenGL Renderer
 
 #Secondary Possible features
 ---In-world editor to manipulate and change environment
