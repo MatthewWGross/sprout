@@ -204,6 +204,7 @@ namespace Engine
 		glfwTerminate();
 	}
 
+static float gModelRot = 0.0f;
 
 	bool Window::update()
 	{
@@ -221,6 +222,9 @@ namespace Engine
         );
         // Model matrix : an identity matrix (model will be at the origin)
         glm::mat4 Model = glm::mat4(1.0f);
+        Model = glm::rotate(Model, gModelRot, glm::vec3(0,1,0));
+
+        gModelRot+=.01f;
         // Our ModelViewProjection : multiplication of our 3 matrices
         MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
