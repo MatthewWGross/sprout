@@ -1,7 +1,14 @@
-#include "application.h"
+#include "winplatform.h"
+
 int main(void)
 {
-	Engine::Application app;
-	app.run();
+	Platform::InitPlatformAndWindow();
+
+	bool shouldUpdate = true;
+	while(shouldUpdate)
+	{
+		shouldUpdate = Platform::UpdateInput();
+		Platform::UpdateRender();
+	}
 	return 0;
 }
