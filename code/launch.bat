@@ -1,1 +1,1 @@
-START /D .. ../build/application.exe
+START /D .. ../build/winplatform.exe

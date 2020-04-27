@@ -1,8 +1,13 @@
 #version 330 core
-// Interpolated values from the vertex shaders
+
 in vec3 fragmentColor;
-out vec3 color;
+in vec2 texCoords;
+
+out vec4 color;
+
+uniform sampler2D ourTexture;
+
 void main()
 {
-  color = fragmentColor;
+  color = texture(ourTexture, texCoords);
 }

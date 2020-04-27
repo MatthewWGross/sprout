@@ -16,6 +16,9 @@
 using namespace glm;
 #include "shader.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 // Dumping ground for temporary globals
 namespace
 {
@@ -98,12 +101,53 @@ static const GLfloat g_color_buffer_data[] = {
     0.820f, 0.883f, 0.371f,
     0.982f, 0.099f, 0.879f};
 
+// UV's for each vertex
+static const GLfloat g_uv_data[] = {
+    0.583f, 1.0f,
+    0.609f, 0.436f,
+    0.327f, 0.0f,
+    0.822f, 0.201f,
+    0.435f, 0.223f,
+    0.0f, 0.185f,
+    1.0f, 0.761f,
+    0.559f, 0.730f,
+    0.359f, 0.152f,
+    0.483f, 0.789f,
+    0.559f, 0.639f,
+    0.195f, 0.859f,
+    0.014f, 0.576f,
+    0.771f, 0.970f,
+    0.406f, 0.116f,
+    0.676f, 0.133f,
+    0.971f, 0.833f,
+    0.140f, 0.489f,
+    0.997f, 0.064f,
+    0.945f, 0.592f,
+    0.543f, 0.978f,
+    0.279f, 0.505f,
+    0.167f, 0.077f,
+    0.347f, 0.137f,
+    0.055f, 0.042f,
+    0.714f, 0.345f,
+    0.783f, 0.734f,
+    0.722f, 0.174f,
+    0.302f, 0.848f,
+    0.225f, 0.040f,
+    0.517f, 0.338f,
+    0.053f, 0.120f,
+    0.393f, 0.362f,
+    0.673f, 0.457f,
+    0.820f, 0.371f,
+    0.982f, 0.879f};
+
 // This will identify our vertex buffer
 GLuint colorbuffer;
+GLuint uvbuffer;
 GLuint vertexbuffer;
 GLuint VertexArrayID;
 GLuint MatrixID;
 GLuint programID;
+GLuint textureID;
 glm::mat4 MVP;
 GLFWwindow *window;
 } // namespace
@@ -148,7 +192,7 @@ void InitPlatformAndWindow()
 
     // Ensure we can capture the escape key being pressed below
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-    glClearColor(.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
 
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("./data/shaders/simpleVertexShader.vertexShader", "./data/shaders/simpleFragmentShader.fragmentShader");
@@ -171,10 +215,42 @@ void InitPlatformAndWindow()
     glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_color_buffer_data), g_color_buffer_data, GL_STATIC_DRAW);
 
+    glGenBuffers(1, &uvbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(g_uv_data), g_uv_data, GL_STATIC_DRAW);
+
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
     // Accept fragment if it closer to the camera than the former one
     glDepthFunc(GL_LESS);
+
+    printf("Loading Image\n");
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID); 
+     // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+    int width, height, nrChannels;
+    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+    unsigned char *data = stbi_load("./data/textures/container.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        printf("Image Loaded successfully!, width %i, height %i", width, height);
+    }
+    else
+    {
+        printf("Failed to load texture");
+    }
+    stbi_image_free(data);
+
+
+
 }
 
 bool UpdateInput()
@@ -208,8 +284,13 @@ void UpdateRender()
     MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
     glUseProgram(programID);
+    glUniform1i(glGetUniformLocation(programID, "ourTexture"), 0);
     // Clear the screen. It's not mentioned before Tutorial 02, but it can cause flickering, so it's there nonetheless.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
 
     // Send our transformation to the currently bound shader,
     // in the "MVP" uniform
@@ -238,9 +319,24 @@ void UpdateRender()
         0,        // stride
         (void *)0 // array buffer offset
     );
+
+    // 2nd attribute buffer : colors
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+    glVertexAttribPointer(
+        2,        // attribute. No particular reason for 1, but must match the layout in the shader.
+        2,        // size
+        GL_FLOAT, // type
+        GL_FALSE, // normalized?
+        0,        // stride
+        (void *)0 // array buffer offset
+    );
+
     // Draw the triangle !
     glDrawArrays(GL_TRIANGLES, 0, 12 * 3); // 12*3 indices starting at 0 -> 12 triangles -> 6 squares
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
 
     // Swap buffers
     glfwSwapBuffers(window);
@@ -250,6 +346,8 @@ void Shutdown()
 {
     // Cleanup VBO
     glDeleteBuffers(1, &vertexbuffer);
+    glDeleteBuffers(1, &colorbuffer);
+    glDeleteBuffers(1, &uvbuffer);
     glDeleteVertexArrays(1, &VertexArrayID);
     glDeleteProgram(programID);
 
