@@ -31,10 +31,14 @@ std::vector<glm::vec3> normals; // Won't be used at the moment.
 // This will identify our vertex buffer
 GLuint uvbuffer;
 GLuint vertexbuffer;
+GLuint normalbuffer;
 GLuint VertexArrayID;
 GLuint MatrixID;
+GLuint ModelMatrixID;
+GLuint ViewMatrixID;
 GLuint programID;
 GLuint textureID;
+GLuint LightID;
 glm::mat4 MVP;
 GLFWwindow *window;
 } // namespace
@@ -86,6 +90,8 @@ void InitPlatformAndWindow()
 
     // Get a handle for our "MVP" uniform
     MatrixID = glGetUniformLocation(programID, "MVP");
+    ModelMatrixID = glGetUniformLocation(programID, "M");
+    ViewMatrixID = glGetUniformLocation(programID, "V");
 
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
@@ -118,7 +124,7 @@ void InitPlatformAndWindow()
     stbi_image_free(data);
 
     // Read our .obj file
-    bool res = loadOBJ("./data/models/cube.obj", vertices, uvs, normals);
+    bool res = loadOBJ("./data/models/suzanne.obj", vertices, uvs, normals);
 
     // Bind our VBO Data
     glGenVertexArrays(1, &VertexArrayID);
@@ -131,6 +137,15 @@ void InitPlatformAndWindow()
     glGenBuffers(1, &uvbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
     glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
+
+	glGenBuffers(1, &normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+
+    // Get a handle for our "LightPosition" uniform
+	glUseProgram(programID);
+	LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
+
 }
 
 bool UpdateInput()
@@ -162,9 +177,13 @@ void UpdateRender()
     gModelRot += .01f;
     // Our ModelViewProjection : multiplication of our 3 matrices
     MVP = Projection * View * Model; // Remember, matrix multiplication is the other way around
+    
 
     glUseProgram(programID);
     glUniform1i(glGetUniformLocation(programID, "ourTexture"), 0);
+
+    glm::vec3 lightPos = glm::vec3(4,4,4);
+	glUniform3f(LightID, lightPos.x, lightPos.y, lightPos.z);
     // Clear the screen. It's not mentioned before Tutorial 02, but it can cause flickering, so it's there nonetheless.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -174,6 +193,8 @@ void UpdateRender()
     // Send our transformation to the currently bound shader,
     // in the "MVP" uniform
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &Model[0][0]);
+	glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &View[0][0]);
 
     // 1rst attribute buffer : vertices
     glEnableVertexAttribArray(0);
@@ -199,10 +220,23 @@ void UpdateRender()
         (void *)0 // array buffer offset
     );
 
+    // 3rd attribute buffer : normals
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+	glVertexAttribPointer(
+		2,                                // attribute
+		3,                                // size
+		GL_FLOAT,                         // type
+		GL_FALSE,                         // normalized?
+		0,                                // stride
+		(void*)0                          // array buffer offset
+	);
+
     // Draw the triangle !
     glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size()));
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
 
     // Swap buffers
     glfwSwapBuffers(window);
@@ -213,6 +247,7 @@ void Shutdown()
     // Cleanup VBO
     glDeleteBuffers(1, &vertexbuffer);
     glDeleteBuffers(1, &uvbuffer);
+    glDeleteBuffers(1, &normalbuffer);
     glDeleteVertexArrays(1, &VertexArrayID);
     glDeleteProgram(programID);
 

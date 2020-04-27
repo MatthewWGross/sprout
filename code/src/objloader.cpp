@@ -49,7 +49,7 @@ bool loadOBJ(
 
 		// else : parse lineHeader
 
-		if ( strcmp( lineHeader, "v" ) == 0 
+		if ( strcmp( lineHeader, "v" ) == 0 )
 		{
 			glm::vec3 vertex;
 			fscanf_s(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z);
