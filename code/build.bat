@@ -6,7 +6,7 @@ set commonCompilerFlags=-MD -nologo -Od -Oi -Gm- -GR- -EHsc-  -W4 -wd4201 -wd410
 set commonLinkerFlags= -opt:ref user32.lib Gdi32.lib shell32.lib oleaut32.lib GLEW_1130_DEBUG.lib glfw3_DEBUG.lib opengl32.lib glu32.lib /NODEFAULTLIB:MSVCRTD.lib
 set cppfiles=..\code\src\winplatform.cpp ..\code\src\main.cpp ..\code\src\shader.cpp ..\code\src\objloader.cpp ..\code\src\vboindexer.cpp
 
-IF EXIST ..\build rm -rf ..\build
+IF EXIST ..\build rmdir /s /q ..\build
 mkdir ..\build
 pushd ..\build
 
