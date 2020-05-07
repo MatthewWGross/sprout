@@ -22,26 +22,27 @@ using namespace glm;
 #include "objloader.hpp"
 #include "vboindexer.hpp"
 
+#include "input.h"
+
 // Dumping ground for temporary globals
 namespace
 {
-std::vector<unsigned short> indices;
+    std::vector<unsigned short> indices;
 
-
-// This will identify our vertex buffer
-GLuint uvbuffer;
-GLuint vertexbuffer;
-GLuint normalbuffer;
-GLuint elementbuffer;
-GLuint VertexArrayID;
-GLuint MatrixID;
-GLuint ModelMatrixID;
-GLuint ViewMatrixID;
-GLuint programID;
-GLuint textureID;
-GLuint LightID;
-glm::mat4 MVP;
-GLFWwindow *window;
+    // This will identify our vertex buffer
+    GLuint uvbuffer;
+    GLuint vertexbuffer;
+    GLuint normalbuffer;
+    GLuint elementbuffer;
+    GLuint VertexArrayID;
+    GLuint MatrixID;
+    GLuint ModelMatrixID;
+    GLuint ViewMatrixID;
+    GLuint programID;
+    GLuint textureID;
+    GLuint LightID;
+    glm::mat4 MVP;
+    GLFWwindow *window;
 } // namespace
 
 namespace Platform
@@ -163,12 +164,32 @@ void InitPlatformAndWindow()
 
 }
 
-bool UpdateInput()
+int getGLFWKeyForInput(e_sproutInputKey key)
+{
+    switch (key)
+    {
+        case KEY_DOWN: return GLFW_KEY_S;
+        case KEY_UP: return GLFW_KEY_W;
+        case KEY_LEFT: return GLFW_KEY_A;
+        case KEY_RIGHT: return GLFW_KEY_D;
+        case KEY_ENTER: return GLFW_KEY_ENTER;
+        case KEY_ESCAPE: return GLFW_KEY_ESCAPE;
+        case KEY_SPACE: return GLFW_KEY_SPACE;
+    }
+
+}
+
+void UpdateInput(sproutInputState& input)
 {
     glfwPollEvents();
+    auto tmp = input.currentInput;
+    input.currentInput = input.previousInput;
+    input.previousInput = tmp;
 
-    // return if we should continue updating
-    return (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) == 0);
+    for(int i = 0; i < INPUT_COUNT; i++)
+    {
+        input.currentInput[i] = glfwGetKey(window, getGLFWKeyForInput(e_sproutInputKey(i))) == GLFW_PRESS;
+    }
 }
 
 static float gModelRot = 0.0f;
@@ -274,4 +295,15 @@ void Shutdown()
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
 }
+
+void SetShouldShutdown()
+{
+    glfwSetWindowShouldClose(window, true);
+}
+
+bool ShouldShutdown()
+{
+    return glfwWindowShouldClose(window) !=0;
+}
+
 } // namespace Platform

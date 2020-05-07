@@ -1,14 +1,20 @@
 #include "winplatform.h"
+#include "input.h"
 
 int main(void)
 {
+	sproutInputState inputState;
+	inputState.clear();
+
 	Platform::InitPlatformAndWindow();
 
-	bool shouldUpdate = true;
-	while(shouldUpdate)
+	while(Platform::ShouldShutdown() == false)
 	{
-		shouldUpdate = Platform::UpdateInput();
+		Platform::UpdateInput(inputState);
 		Platform::UpdateRender();
+
+		if(inputState.isKeyTriggered(KEY_ESCAPE))
+			Platform::SetShouldShutdown();
 	}
 	return 0;
 }
